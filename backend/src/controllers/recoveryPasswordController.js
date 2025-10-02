@@ -52,8 +52,8 @@ passwordRecoveryController.requestCode = async (req, res) => {
 
     await sendRecoveryEmail(email, code, name);
 
-    // Responder con éxito
-    res.status(200).json({ message: "Code sent successfully" }); // todo bien
+    // Responder con éxito y devolver token para frontend
+    res.status(200).json({ message: "Code sent successfully", token }); // todo bien
   } catch (error) {
     // Manejo de errores: respuesta 500 y log de error
     res.status(500).json({ message: "Internal Server Error" }); // error servidor
@@ -63,11 +63,11 @@ passwordRecoveryController.requestCode = async (req, res) => {
 
 // Verificar el código recibido por el usuario
 passwordRecoveryController.verifyCode = async (req, res) => {
-  const { code } = req.body;
+  const { code, token: clientToken } = req.body; // token opcional desde frontend
 
   try {
-    // Obtener token JWT desde cookie
-    const token = req.cookies.tokenRecoveryCode;
+    // Obtener token JWT desde cookie o body
+    const token = clientToken || req.cookies.tokenRecoveryCode;
 
     console.log({ token });
 
@@ -94,8 +94,8 @@ passwordRecoveryController.verifyCode = async (req, res) => {
     // Actualizar cookie con el nuevo token validado
     res.cookie("tokenRecoveryCode", newToken, { maxAge: 20 * 60 * 1000 }); // 20 minutos
 
-    // Responder con éxito
-    res.status(200).json({ message: "Code verified successfully" }); // todo bien
+    // Responder con éxito y devolver token para frontend
+    res.status(200).json({ message: "Code verified successfully", token: newToken }); // todo bien
   } catch (error) {
     // Manejo de errores: respuesta 500 y log de error
     res.status(500).json({ message: "Internal Server Error" }); // error servidor
@@ -105,11 +105,11 @@ passwordRecoveryController.verifyCode = async (req, res) => {
 
 // Cambiar la contraseña tras la verificación del código
 passwordRecoveryController.newPassword = async (req, res) => {
-  const { newPassword } = req.body;
+  const { newPassword, token: clientToken } = req.body;
 
   try {
-    // Obtener token JWT desde cookie
-    const token = req.cookies.tokenRecoveryCode;
+    // Obtener token JWT desde cookie o body
+    const token = clientToken || req.cookies.tokenRecoveryCode;
 
     // Decodificar y verificar token con clave secreta
     const decoded = jsonwebtoken.verify(token, config.jwt.secret);
